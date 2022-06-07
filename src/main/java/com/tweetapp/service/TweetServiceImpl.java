@@ -6,18 +6,30 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.tweetapp.model.Admin;
 import com.tweetapp.model.ForgotPasswordPayload;
 import com.tweetapp.model.Tweet;
 import com.tweetapp.model.TweetPayload;
 import com.tweetapp.model.UserT;
 import com.tweetapp.repository.UserRepo;
+import com.tweetapp.util.JwtUtil;
 @Service
 public class TweetServiceImpl implements TweetService {
 	
 	@Autowired
 	UserRepo userRepo;
+	
+	@Autowired
+	JwtUtil jwtutil;
+	
+	@Autowired 
+	CustomerDetailsService customerDetailservice;
+	
 
 	@Override
 	public void registerUser(UserT user) {
@@ -28,7 +40,6 @@ public class TweetServiceImpl implements TweetService {
 	@Override
 	public List<String> getAllUsers() {
 		return userRepo.findAll().stream().map(i->i.getEmail()).collect(Collectors.toList());
-
 	}
 
 	@Override
@@ -44,6 +55,9 @@ public class TweetServiceImpl implements TweetService {
 	public void postTweet(String username, TweetPayload tweet) {
 		// TODO Auto-generated method stub
 		Optional<UserT> user = userRepo.findByEmail(username);
+		if(user.isEmpty()) {
+			throw new RuntimeException("User Not Found");
+		}
 		Tweet temp = new Tweet();
 		temp.setTweetContent(tweet.getTweetContent());
 		temp.setCreation(new Date());
@@ -60,19 +74,39 @@ public class TweetServiceImpl implements TweetService {
 			user.get().setPassword(fpp.getPassword());
 			userRepo.save(user.get());
 		}
+		else {
+			throw new RuntimeException("Password and Confirm Password do not Match");
+		}
 	}
 
 	@Override
 	public List<Tweet> getTweets(String username) {
 		// TODO Auto-generated method stub
-		return userRepo.findByEmail(username).get().getTweets();
+		Optional<UserT> user = userRepo.findByEmail(username);
+		if(user.isEmpty()) {
+			throw new RuntimeException("User Not Found");
+		}
+		return user.get().getTweets();
 	}
 
 	@Override
 	public List<String> getUsernameMatching(String username) {
 		// TODO Auto-generated method stub
 		List<UserT> users = userRepo.getUsernameMatching(username);
+		if(users.isEmpty()) {
+			throw new RuntimeException("No Matching Usernames");
+		}
 		return users.stream().map(i->i.getEmail()).collect(Collectors.toList());
+	}
+
+	@Override
+	public Admin Login(Admin userlogincredentials) {
+		final UserDetails userdetails = customerDetailservice.loadUserByUsername(userlogincredentials.getUserid());
+		if (userdetails.getPassword().equals(userlogincredentials.getUpassword())) {
+			return new Admin(userlogincredentials.getUserid(),  null, jwtutil.generateToken(userdetails));
+		} else {
+			throw new RuntimeException("Invalid Username or Password");
+		}
 	}
 	
 	

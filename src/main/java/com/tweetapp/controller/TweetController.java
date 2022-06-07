@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tweetapp.model.Admin;
@@ -29,7 +30,6 @@ import com.tweetapp.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@Slf4j
 @RequestMapping("/tweets")
 public class TweetController {
 	
@@ -39,35 +39,22 @@ public class TweetController {
 	@Autowired
 	UserRepo userRepo; 
 	
-	@Autowired
-	JwtUtil jwtutil;
-	
-	@Autowired 
-	CustomerDetailsService customerDetailservice;
 	
 	
 	@PostMapping("/register")
+	@ResponseStatus(code = HttpStatus.CREATED)
 	public void registerUser(@RequestBody @Valid UserT user) {
 		tweetService.registerUser(user);
 	}
 	
 	@PostMapping(value = "/login")
-	public ResponseEntity<?> login(@RequestBody Admin userlogincredentials) {
-		log.debug("Start : {} Login");
-		final UserDetails userdetails = customerDetailservice.loadUserByUsername(userlogincredentials.getUserid());
-		log.debug(userdetails.toString());
-		if (userdetails.getPassword().equals(userlogincredentials.getUpassword())) {
-			log.debug("End : {} Login");
-			return new ResponseEntity<Admin>(
-					new Admin(userlogincredentials.getUserid(),  null, jwtutil.generateToken(userdetails)),
-					HttpStatus.OK);
-		} else {
-			log.debug("Access Denied : {} Login");
-			return new ResponseEntity<>("Invalid Username or Password", HttpStatus.FORBIDDEN);
-		}
+	@ResponseStatus(code = HttpStatus.OK)
+	public Admin login(@RequestBody Admin userlogincredentials) {
+		return tweetService.Login(userlogincredentials);
 	}
 	
 	@GetMapping("/users/all")
+	@ResponseStatus(code = HttpStatus.OK)
 	public List<String> getAllUsers(){
 		return tweetService.getAllUsers();
 	}
@@ -75,27 +62,32 @@ public class TweetController {
 	// for creating a tweet
 	
 	@PostMapping(value="/{username}/add")
+	@ResponseStatus(code = HttpStatus.ACCEPTED)
 	public void postTweet(@PathVariable String username, @RequestBody TweetPayload tweet) {
 		tweetService.postTweet(username, tweet);
 	}
 	
 	@GetMapping(value="/all")
+	@ResponseStatus(code = HttpStatus.OK)	
 	public List<Tweet> getTweets() {
 		
 		return tweetService.getAllTweets();
 	}
 	
 	@PostMapping(value="/{username}/forgot")
+	@ResponseStatus(code = HttpStatus.OK)
 	public void forgotPassword(@RequestBody ForgotPasswordPayload fpp, @PathVariable String username) {
 		tweetService.forgotPassword(fpp, username);
 	}
 	
 	@GetMapping(value="/{username}")
+	@ResponseStatus(code = HttpStatus.OK)
 	public List<Tweet> getTweets(@PathVariable String username){
 		return tweetService.getTweets(username);
 	}
 	
 	@GetMapping(value="/user/search/{username}")
+	@ResponseStatus(code = HttpStatus.OK)
 	public List<String> getUsernameMatching(@PathVariable String username){
 		return tweetService.getUsernameMatching(username);
 	}

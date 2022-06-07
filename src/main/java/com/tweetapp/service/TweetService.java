@@ -3,6 +3,9 @@ package com.tweetapp.service;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
+
+import com.tweetapp.model.Admin;
 import com.tweetapp.model.ForgotPasswordPayload;
 import com.tweetapp.model.Tweet;
 import com.tweetapp.model.TweetPayload;
@@ -24,4 +27,6 @@ public interface TweetService {
 	public List<Tweet> getTweets(String username);
 	
 	public List<String> getUsernameMatching(String username);
+	
+	public Admin Login(Admin userlogincredentials);
 }
